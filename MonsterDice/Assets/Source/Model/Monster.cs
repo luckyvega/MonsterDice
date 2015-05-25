@@ -13,7 +13,7 @@ namespace Model
 		public float realAttack;
 		public float realDefense;
 
-		public Monster ()
+		public Monster()
 		{
 		}
 	}

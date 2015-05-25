@@ -6,45 +6,45 @@ namespace Model
 	{
 		private PhaseTracker pt;
 
-		public Alive ()
+		public Alive()
 		{
-			pt = new PhaseTracker ();
+			pt = new PhaseTracker();
 		}
 
-		private void create (Phase p, int phaseId, int lifetime)
+		private void create(Phase p, int phaseId, int lifetime)
 		{
-			pt.registerPhase (p, phaseId, lifetime);
+			pt.registerPhase(p, phaseId, lifetime);
 		}
 
-		public void createInTurn (int turnId, int duration)
+		public void createInTurn(int turnId, int duration)
 		{
-			create (Phase.Turn, turnId, duration);
+			create(Phase.Turn, turnId, duration);
 		}
 
-		public void createInBattle (int battleId, int turnId, int battleDuration, int turnDuration)
+		public void createInBattle(int battleId, int turnId, int battleDuration, int turnDuration)
 		{
-			create (Phase.Turn, turnId, turnDuration);
-			create (Phase.Battle, battleId, battleDuration);
+			create(Phase.Turn, turnId, turnDuration);
+			create(Phase.Battle, battleId, battleDuration);
 		}
 
-		public bool checkAlive (Phase p, int phaseId)
+		public bool checkAlive(Phase p, int phaseId)
 		{
-			return pt.isAliveAtPhase (p, phaseId);
+			return pt.isAliveAtPhase(p, phaseId);
 		}
 	}
 
 	public interface IsTriggered
 	{
-		int getTriggeredCountInGame ();
+		int getTriggeredCountInGame();
 
-		int getTriggeredCountInTurn ();
+		int getTriggeredCountInTurn();
 	}
 
 	public interface IsAlive
 	{
-		int getBornAt ();
+		int getBornAt();
 
-		int getLifetime ();
+		int getLifetime();
 	}
 
 	// Not sure if this design is proper.
@@ -53,8 +53,8 @@ namespace Model
 	// Or maybe just data clearing jobs, GUI handling can be put in an *engine* class
 	public interface IsDynamic
 	{
-		void onTurnStart ();
+		void onTurnStart();
 
-		void onTurnEnd ();
+		void onTurnEnd();
 	}
 }

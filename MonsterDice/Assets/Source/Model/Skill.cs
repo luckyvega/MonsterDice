@@ -2,29 +2,29 @@ using System;
 
 namespace Model
 {
-	public class Skill: IsTriggered
+	public class Skill : IsTriggered
 	{
 		private int triggeredInGame;
 		private int triggeredInTurn;
 		private int skillDataId;
 
-		public Skill ()
+		public Skill()
 		{
 			triggeredInGame = 0;
 			triggeredInTurn = 0;
 		}
 
-		public int getTriggeredCountInGame ()
+		public int getTriggeredCountInGame()
 		{
 			return triggeredInGame;
 		}
 
-		public int getTriggeredCountInTurn ()
+		public int getTriggeredCountInTurn()
 		{
 			return triggeredInTurn;
 		}
 
-		public void trigger ()
+		public void trigger()
 		{
 			triggeredInGame += 1;
 			triggeredInTurn += 1;

@@ -1,30 +1,29 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.EventSystems;
 using System.Collections.Generic;
 
 using Model;
 
-public class MenuHandle : MonoBehaviour
+public class MenuHandle : MonoBehaviour, IPointerClickHandler
 {
 	private bool isSelected;
 
 	// Use this for initialization
-	void Start ()
+	void Start()
 	{
 		isSelected = true;
 	}
-	
+
 	// Update is called once per frame
-	void Update ()
+	void Update()
 	{
-			
+
 	}
-	
-	void OnMouseDown ()
+
+	public void OnPointerClick(PointerEventData eventData)
 	{
-		Debug.Log ("click");
-		Tuple<int, int> index = Tool.getBlockIndex (this.transform.position);
-		Debug.Log (index.Item1 + ", " + index.Item2);
-		Tool.getManagerHandle ().showMonsterMenu (this.transform.position);
+		Tuple<int, int> index = Tool.getBlockIndex(this.transform.position);
+		Tool.getManagerHandle().showMonsterMenu(this.transform.position);
 	}
 }

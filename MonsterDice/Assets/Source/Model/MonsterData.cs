@@ -10,13 +10,13 @@ namespace Model
 		private int hp;
 		private int attack;
 
-		private MonsterData ()
+		private MonsterData()
 		{
 		}
 
-		public static Monster generateFromConfig ()
+		public static Monster generateFromConfig()
 		{
-			Monster m = new Monster ();
+			Monster m = new Monster();
 
 			return m;
 		}

@@ -7,7 +7,7 @@ namespace Model
 		private int id;
 		private string name;
 
-		public Symbol ()
+		public Symbol()
 		{
 		}
 	}

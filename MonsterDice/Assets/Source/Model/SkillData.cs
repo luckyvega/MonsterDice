@@ -8,7 +8,7 @@ namespace Model
 		private string name;
 		private int[] expense;
 
-		private SkillData ()
+		private SkillData()
 		{
 		}
 
