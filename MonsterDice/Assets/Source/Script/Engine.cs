@@ -114,6 +114,38 @@ public class SummonProcess
 	}
 }
 
+public class MoveProcess
+{
+	private List<Tuple<int, int>> moveRegion;
+
+	public MoveProcess()
+	{
+		moveRegion = new List<Tuple<int, int>>();
+	}
+
+	public void startProcess(Tuple<int, int> start, int distance)
+	{
+		moveRegion.Clear();
+		moveRegion = Engine.bf.getReachableBlock(start, distance);
+		Engine.gs = GameStage.move;
+	}
+
+	public bool inProcess()
+	{
+		return Engine.gs == GameStage.move;
+	}
+
+	public void endProcess()
+	{
+		Engine.gs = GameStage.standby;
+	}
+
+	public List<Tuple<int, int>> getMoveRegion()
+	{
+		return moveRegion;
+	}
+}
+
 public class BattleField
 {
 	private BlockType[,] map;
@@ -205,6 +237,7 @@ public class Engine
 {
 	public static GameStage gs = GameStage.standby;
 	public static SummonProcess sp = new SummonProcess();
+	public static MoveProcess mp = new MoveProcess();
 	public static BattleField bf = new BattleField();
 }
 

@@ -63,6 +63,7 @@
      <Compile Include="Assets\Source\Script\MenuHandle.cs" />
      <Compile Include="Assets\Source\Script\Tool.cs" />
      <Compile Include="Assets\Source\Script\TopBlockHandle.cs" />
+     <None Include="Assets\Resources\data.xml" />
  <Reference Include="UnityEngine.UI">
  <HintPath>C:/Program Files/Unity/Editor/Data/UnityExtensions/Unity/GUISystem/UnityEngine.UI.dll</HintPath>
  </Reference>

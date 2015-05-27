@@ -23,7 +23,7 @@ public class MenuHandle : MonoBehaviour, IPointerClickHandler
 
 	public void OnPointerClick(PointerEventData eventData)
 	{
-		Tuple<int, int> index = Tool.getBlockIndex(this.transform.position);
+		if (Engine.gs != GameStage.standby) return;
 		Tool.getManagerHandle().showMonsterMenu(this.transform.position);
 	}
 }

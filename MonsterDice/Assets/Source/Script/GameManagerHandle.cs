@@ -30,11 +30,15 @@ public class GameManagerHandle : MonoBehaviour
 	public void addBottomBlock(Tuple<int, int> index)
 	{
 		addBlock(index, bottomBlockMap, bottomBlockPrefab);
+		GameObject block = getBottomBlock(index);
+		block.GetComponent<SpriteRenderer>().sortingOrder = 1;
 	}
 
 	public void addTopBlock(Tuple<int, int> index)
 	{
 		addBlock(index, topBlockMap, topBlockPrefab);
+		GameObject block = getTopBlock(index);
+		block.GetComponent<SpriteRenderer>().sortingOrder = 2;
 		Engine.bf.setBlockType(index, BlockType.normal);
 	}
 
@@ -67,15 +71,16 @@ public class GameManagerHandle : MonoBehaviour
 		}
 		if (name == "move")
 		{
-			Engine.gs = GameStage.move;
 			Tuple<int, int> index = Tool.getBlockIndex(focusedMonsterPos.Value);
-			List<Tuple<int, int>> blockList = Engine.bf.getReachableBlock(index, 2);
+			Engine.mp.startProcess(index, 2);
+			List<Tuple<int, int>> blockList = Engine.mp.getMoveRegion();
 			foreach (Tuple<int, int> block in blockList)
 			{
 				GameObject topBlock = getTopBlock(block);
 				Color c = topBlock.GetComponent<SpriteRenderer>().color;
 				c.a = 0.5f;
 				topBlock.GetComponent<SpriteRenderer>().color = c;
+				topBlock.GetComponent<TopBlockHandle>().isEnabled = true;
 			}
 		}
 		hideAllMenu();
@@ -117,7 +122,7 @@ public class GameManagerHandle : MonoBehaviour
 			return;
 		}
 		GameObject monster = Instantiate(monsterPrefab, Tool.getPosition(index), Quaternion.identity) as GameObject;
-		monster.GetComponent<SpriteRenderer>().sortingOrder = 1;
+		monster.GetComponent<SpriteRenderer>().sortingOrder = 3;
 		Sprite s = Resources.Load<Sprite>(Engine.sp.getMonster());
 		monster.GetComponent<SpriteRenderer>().sprite = s;
 		monsterMap.Add(Tool.tupleToInt(index), monster);
@@ -153,7 +158,15 @@ public class GameManagerHandle : MonoBehaviour
 		monsterMap.Add(Tool.tupleToInt(desIndex), monster);
 		Engine.bf.setBlockType(desIndex, BlockType.monster);
 		focusedMonsterPos = null;
-		Engine.gs = GameStage.standby;
+		foreach (Tuple<int, int> block in Engine.mp.getMoveRegion())
+		{
+			GameObject topBlock = getTopBlock(block);
+			Color c = topBlock.GetComponent<SpriteRenderer>().color;
+			c.a = 1;
+			topBlock.GetComponent<SpriteRenderer>().color = c;
+			topBlock.GetComponent<TopBlockHandle>().isEnabled = false;
+		}
+		Engine.mp.endProcess();
 	}
 	#endregion
 

@@ -7,7 +7,6 @@ using Model;
 public class ButtomBlockHandle : MonoBehaviour, IPointerClickHandler
 {
 	private bool isSelected;
-	public GameObject topBlockPrefab;
 
 	private Tuple<int, int> getBlockIndex()
 	{
@@ -31,6 +30,7 @@ public class ButtomBlockHandle : MonoBehaviour, IPointerClickHandler
 
 	public void OnPointerClick(PointerEventData eventData)
 	{
+		Debug.Log("bottom click");
 		if (!Engine.sp.inProcess())
 			return;
 		Tuple<int, int> index = Tool.getBlockIndex(transform.position);
