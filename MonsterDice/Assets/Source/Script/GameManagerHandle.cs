@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
 using System.Collections.Generic;
+using System.Xml;
 
 using Model;
 
@@ -10,6 +11,8 @@ public class GameManagerHandle : MonoBehaviour
 	private Dictionary<int, GameObject> topBlockMap;
 	private Dictionary<string, GameObject> menuMap;
 	private Dictionary<int, GameObject> monsterMap;
+	private List<MonsterData> monsterDataList;
+	private int[] standbyMonsterIds;
 	// Cool feature, T? shorts for Nullable<T>, otherwise value type (like int, bool) cannot be assigned null
 	private Vector3? focusedMonsterPos; // the position of the current focused monster
 	public GameObject bottomBlockPrefab;
@@ -175,6 +178,19 @@ public class GameManagerHandle : MonoBehaviour
 		Engine.sp.startProcess();
 	}
 
+	public void showMonsterInfo(int id)
+	{
+		MonsterData md = monsterDataList[standbyMonsterIds[id]];
+		string resourceId = md.getNormalizedResourceId();
+		GameObject displayMonster = GameObject.Find("display_mons");
+		Sprite s = Resources.Load<Sprite>(resourceId + "_large");
+		displayMonster.GetComponent<Image>().sprite = s;
+
+		string info = string.Format("{0}\n等级 {1}\n属性 {2}\n攻击 {3}\n生命 {4}", md.name, md.level, md.property, md.attack, md.hp);
+		GameObject displayInfo = GameObject.Find("display_info");
+		displayInfo.GetComponent<Text>().text = info;
+	}
+
 	// Use this for initialization
 	void Start()
 	{
@@ -182,6 +198,8 @@ public class GameManagerHandle : MonoBehaviour
 		topBlockMap = new Dictionary<int, GameObject>();
 		menuMap = new Dictionary<string, GameObject>();
 		monsterMap = new Dictionary<int, GameObject>();
+		monsterDataList = new List<MonsterData>();
+		standbyMonsterIds = new int[3];
 		focusedMonsterPos = null;
 
 		for (int i = 0; i < Global.mapSize; i++)
@@ -210,6 +228,27 @@ public class GameManagerHandle : MonoBehaviour
 
 			buttonObj.SetActive(false);
 			menuMap[menuText] = buttonObj;
+		}
+
+		TextAsset xmlAsset = Resources.Load<TextAsset>("data");
+		XmlDocument xmlDoc = new XmlDocument();
+		xmlDoc.LoadXml(xmlAsset.text);
+		XmlNodeList monsterList = xmlDoc.GetElementsByTagName("monster");
+
+		foreach (XmlNode node in monsterList)
+		{
+			MonsterData md = new MonsterData(node);
+			monsterDataList.Add(md);
+		}
+		for (int i = 1; i < 4; i++)
+		{
+			GameObject standbyMonster = GameObject.Find("standby_mons_" + i);
+			GameObject diceDistribution = GameObject.Find("dice_dist_" + i);
+			int id = Random.Range(0, monsterDataList.Count - 1);
+			Sprite s = Resources.Load<Sprite>(monsterDataList[id].getNormalizedResourceId() + "_small");
+			standbyMonsterIds[i - 1] = id;
+			standbyMonster.GetComponent<Image>().sprite = s;
+			diceDistribution.GetComponent<Text>().text = monsterDataList[0].getDiceDistributionString();
 		}
 	}
 

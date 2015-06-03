@@ -53,7 +53,7 @@ public class SummonProcess
 
 	public string getMonster()
 	{
-		return "094";
+		return "248.00_small";
 	}
 
 	public int getSelectedNum()
