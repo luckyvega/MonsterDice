@@ -6,8 +6,7 @@ namespace Model
 {
 	public class MonsterData
 	{
-		private static int globalMonsterIndex = 0;
-		private static Dictionary<char, string> diceMap = new Dictionary<char, string>()
+		public static Dictionary<char, string> diceMap = new Dictionary<char, string>()
 		{
 			{'P', "前进"},
 			{'A', "攻击"},
@@ -27,10 +26,9 @@ namespace Model
 		public string resourceId;
 		public int[] skillList;
 
-		public MonsterData(XmlNode node)
+		public MonsterData(int monsterDataId, XmlNode node)
 		{
-			globalMonsterIndex++;
-			id = globalMonsterIndex;
+			id = monsterDataId;
 			name = node["name"].InnerText;
 			level = int.Parse(node["level"].InnerText);
 			property = node["property"].InnerText;

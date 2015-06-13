@@ -1,5 +1,6 @@
-using UnityEngine;
+﻿using UnityEngine;
 using System;
+using System.Collections.Generic;
 
 using Model;
 
@@ -43,6 +44,24 @@ public class Tool
 		GameObject manager = GameObject.Find(Global.gameManagerName);
 		GameManagerHandle handle = manager.GetComponent<GameManagerHandle>();
 		return handle;
+	}
+
+	public static List<int> getRandomList(int min, int max, int count)
+	{
+		List<int> randomList = new List<int>();
+		int[] candidateList = new int[max - min + 1];
+		for (int i = 0; i <= max - min; i++)
+			candidateList[i] = min + i;
+		int candidateNum = candidateList.Length;
+		System.Random r = new System.Random(System.DateTime.Now.Millisecond);
+		for (int i = 0; i < count; i++)
+		{
+			int index = r.Next(candidateNum);
+			randomList.Add(candidateList[index]);
+			candidateList[index] = candidateList[candidateNum - 1];
+			candidateNum--;
+		}
+		return randomList;
 	}
 }
 

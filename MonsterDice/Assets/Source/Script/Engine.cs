@@ -51,9 +51,11 @@ public class SummonProcess
 		return true;
 	}
 
-	public string getMonster()
+	public int getMonster()
 	{
-		return "248.00_small";
+		// For test, set a static value here
+		// selectedMonster = 5;
+		return selectedMonster;
 	}
 
 	public int getSelectedNum()
@@ -117,16 +119,23 @@ public class SummonProcess
 public class MoveProcess
 {
 	private List<Tuple<int, int>> moveRegion;
+	private Dictionary<int, int> distanceMap;
 
 	public MoveProcess()
 	{
 		moveRegion = new List<Tuple<int, int>>();
+		distanceMap = new Dictionary<int, int>();
 	}
 
 	public void startProcess(Tuple<int, int> start, int distance)
 	{
 		moveRegion.Clear();
-		moveRegion = Engine.bf.getReachableBlock(start, distance);
+		distanceMap.Clear();
+		foreach (Tuple<Tuple<int, int>, int> tuple in Engine.bf.getReachableBlock(start, distance))
+		{
+			moveRegion.Add(tuple.Item1);
+			distanceMap[Tool.tupleToInt(tuple.Item1)] = tuple.Item2;
+		}
 		Engine.gs = GameStage.move;
 	}
 
@@ -143,6 +152,15 @@ public class MoveProcess
 	public List<Tuple<int, int>> getMoveRegion()
 	{
 		return moveRegion;
+	}
+
+	public int getDistance(Tuple<int, int> index)
+	{
+		int key = Tool.tupleToInt(index);
+		if (distanceMap.ContainsKey(key))
+			return distanceMap[key];
+		else
+			return -1;
 	}
 }
 
@@ -199,9 +217,9 @@ public class BattleField
 			return map[b.Item1, b.Item2];
 	}
 
-	public List<Tuple<int, int>> getReachableBlock(Tuple<int, int> b, int distance)
+	public List<Tuple<Tuple<int, int>, int>> getReachableBlock(Tuple<int, int> b, int distance)
 	{
-		List<Tuple<int, int>> ret = new List<Tuple<int, int>>();
+		List<Tuple<Tuple<int, int>, int>> ret = new List<Tuple<Tuple<int, int>, int>>();
 		if (!Tool.checkBlockIndex(b))
 			return ret;
 		Queue<Tuple<Tuple<int, int>, int>> blockQueue = new Queue<Tuple<Tuple<int, int>, int>>();
@@ -215,7 +233,7 @@ public class BattleField
 			int depth = head.Item2;
 			if (visited.Contains(key))
 				continue;
-			ret.Add(head.Item1);
+			ret.Add(head);
 			visited.Add(key);
 			if (depth >= distance)
 				continue;

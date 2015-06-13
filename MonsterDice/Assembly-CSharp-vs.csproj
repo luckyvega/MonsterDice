@@ -51,6 +51,7 @@
      <Compile Include="Assets\Source\Model\Monster.cs" />
      <Compile Include="Assets\Source\Model\MonsterData.cs" />
      <Compile Include="Assets\Source\Model\PhaseTracker.cs" />
+     <Compile Include="Assets\Source\Model\Player.cs" />
      <Compile Include="Assets\Source\Model\Skill.cs" />
      <Compile Include="Assets\Source\Model\SkillData.cs" />
      <Compile Include="Assets\Source\Model\Symbol.cs" />
@@ -60,7 +61,9 @@
      <Compile Include="Assets\Source\Script\Engine.cs" />
      <Compile Include="Assets\Source\Script\GameManagerHandle.cs" />
      <Compile Include="Assets\Source\Script\Global.cs" />
+     <Compile Include="Assets\Source\Script\MaskHandle.cs" />
      <Compile Include="Assets\Source\Script\MenuHandle.cs" />
+     <Compile Include="Assets\Source\Script\Popup.cs" />
      <Compile Include="Assets\Source\Script\Tool.cs" />
      <Compile Include="Assets\Source\Script\TopBlockHandle.cs" />
      <None Include="Assets\Resources\data.xml" />

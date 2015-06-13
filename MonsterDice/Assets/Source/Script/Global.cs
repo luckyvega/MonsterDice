@@ -3,6 +3,7 @@ using System;
 
 public class Global
 {
+	public static int playerHp = 10;
 	public static float mapLeft = -1.5f;
 	public static float mapTop = 1.5f;
 	public static float blockSize = 0.3f;

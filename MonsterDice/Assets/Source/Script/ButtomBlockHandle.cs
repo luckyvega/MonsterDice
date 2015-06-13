@@ -30,6 +30,8 @@ public class ButtomBlockHandle : MonoBehaviour, IPointerClickHandler
 
 	public void OnPointerClick(PointerEventData eventData)
 	{
+		if (!EventSystem.current.IsPointerOverGameObject())
+			return;
 		Debug.Log("bottom click");
 		if (!Engine.sp.inProcess())
 			return;
