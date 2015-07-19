@@ -5,10 +5,10 @@ namespace Model
 {
 	public class Monster
 	{
-		public int monsterDataId;
 		private List<Skill> skillList;
 		private List<Effect> effectList;
-		private int ownerId;
+		public int monsterDataId;
+		public int ownerId;
 		public float realHp;
 		public float realAttack;
 		public float realDefense;

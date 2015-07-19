@@ -7,14 +7,16 @@ public enum GameStage
 {
 	standby,
 	summon,
-	move
+	move,
+	attack
 }
 
 public enum BlockType
 {
 	invalid,
 	normal,
-	monster,
+	monster_0,
+	monster_1,
 	obstacle,
 }
 
@@ -164,6 +166,76 @@ public class MoveProcess
 	}
 }
 
+public class AttackProcess
+{
+	private Tuple<int, int> attacker;
+	private Tuple<int, int> attackee;
+
+	public AttackProcess()
+	{
+		attacker = null;
+		attackee = null;
+	}
+
+	public void startProces(Tuple<int, int> position)
+	{
+		Engine.gs = GameStage.attack;
+		attacker = position;
+	}
+
+	public bool canAttack(Tuple<int, int> target)
+	{
+		if (!inProcess())
+			return false;
+		if(Engine.bf.checkTarget(attacker, target, 1))
+		{
+			attackee = target;
+			return true;
+		}
+		return false;
+	}
+
+	public Tuple<int, int> getAttackerPosition()
+	{
+		return attacker;
+	}
+
+	public Tuple<int, int> getAttackeePosition()
+	{
+		return attackee;
+	}
+
+	public string getAttackAnimateTrigger()
+	{
+		string[] triggers = { "moveToRight", "moveToDown", "moveToUp", "moveToLeft" };
+		int xdiff = attacker.Item1 - attackee.Item1;
+		int ydiff = attacker.Item2 - attackee.Item2;
+		int triggerIndex = (xdiff * 3 + ydiff + 3) / 2;
+		// Weird code
+		// Since monster object for player 0 is mirrored, need to switch left and right
+		if(Engine.bf.getBlockType(attacker) == BlockType.monster_0)
+		{
+			if (triggerIndex == 0)
+				triggerIndex = 3;
+			else if (triggerIndex == 3)
+				triggerIndex = 0;
+		}
+		return triggers[triggerIndex];
+	}
+
+	public bool inProcess()
+	{
+		return Engine.gs == GameStage.attack;
+	}
+
+	public void endProcess()
+	{
+		Engine.gs = GameStage.standby;
+		attacker = null;
+		attackee = null;
+	}
+}
+
 public class BattleField
 {
 	private BlockType[,] map;
@@ -209,6 +281,23 @@ public class BattleField
 		return true;
 	}
 
+	public bool checkTarget(Tuple<int, int> b1, Tuple<int, int> b2, int distance)
+	{
+		BlockType type1 = getBlockType(b1);
+		BlockType type2 = getBlockType(b2);
+		if ((type1 == BlockType.monster_0 && type2 == BlockType.monster_1) || (type1 == BlockType.monster_1 && type2 == BlockType.monster_0))
+		{
+			if (distance == -1)
+				return true;
+			int realDistance = Math.Abs(b1.Item1 - b2.Item1) + Math.Abs(b1.Item2 - b2.Item2);
+			if (realDistance <= distance)
+				return true;
+			else
+				return false;
+		}
+		return false;
+	}
+
 	public BlockType getBlockType(Tuple<int, int> b)
 	{
 		if (!Tool.checkBlockIndex(b))
@@ -219,8 +308,15 @@ public class BattleField
 
 	public List<Tuple<Tuple<int, int>, int>> getReachableBlock(Tuple<int, int> b, int distance)
 	{
+		// TODO
+		// To support passing through teammate monsters, treat block occupied by teammate monster
+		// as normal block, but remove them from the result before returning
+		// Done
 		List<Tuple<Tuple<int, int>, int>> ret = new List<Tuple<Tuple<int, int>, int>>();
 		if (!Tool.checkBlockIndex(b))
+			return ret;
+		BlockType bt = getBlockType(b);
+		if (bt != BlockType.monster_0 && bt != BlockType.monster_1)
 			return ret;
 		Queue<Tuple<Tuple<int, int>, int>> blockQueue = new Queue<Tuple<Tuple<int, int>, int>>();
 		HashSet<int> visited = new HashSet<int>();
@@ -233,17 +329,18 @@ public class BattleField
 			int depth = head.Item2;
 			if (visited.Contains(key))
 				continue;
-			ret.Add(head);
+			if (getBlockType(head.Item1) == BlockType.normal)
+				ret.Add(head);
 			visited.Add(key);
 			if (depth >= distance)
 				continue;
 			foreach (int i in diffs)
 			{
 				Tuple<int, int> candidate1 = new Tuple<int, int>(head.Item1.Item1 + i, head.Item1.Item2);
-				if (getBlockType(candidate1) == BlockType.normal)
+				if (getBlockType(candidate1) == BlockType.normal || getBlockType(candidate1) == bt)
 					blockQueue.Enqueue(new Tuple<Tuple<int, int>, int>(candidate1, depth + 1));
 				Tuple<int, int> candidate2 = new Tuple<int, int>(head.Item1.Item1, head.Item1.Item2 + i);
-				if (getBlockType(candidate2) == BlockType.normal)
+				if (getBlockType(candidate2) == BlockType.normal || getBlockType(candidate2) == bt)
 					blockQueue.Enqueue(new Tuple<Tuple<int, int>, int>(candidate2, depth + 1));
 			}
 		}
@@ -256,6 +353,7 @@ public class Engine
 	public static GameStage gs = GameStage.standby;
 	public static SummonProcess sp = new SummonProcess();
 	public static MoveProcess mp = new MoveProcess();
+	public static AttackProcess ap = new AttackProcess();
 	public static BattleField bf = new BattleField();
 }
 

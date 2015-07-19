@@ -1,4 +1,5 @@
 using System;
+using Newtonsoft.Json;
 
 namespace Model
 {
@@ -56,5 +57,33 @@ namespace Model
 		void onTurnStart();
 
 		void onTurnEnd();
+	}
+
+	public class Combine
+	{
+		public Simple t1;
+		public Simple t2;
+
+		public string toString()
+		{
+			return JsonConvert.SerializeObject(this);
+		}
+	}
+
+	public class Simple
+	{
+		// for constant, set method to Constant
+		public string value;
+
+		public string toString()
+		{
+			return JsonConvert.SerializeObject(this);
+		}
+	}
+
+	public class Complex: Simple
+	{
+		public string name;
+		public string method;
 	}
 }

@@ -4,12 +4,15 @@ using System.Collections.Generic;
 using System.Xml;
 
 using Model;
+using Newtonsoft.Json;
 
 public class GameManagerHandle : MonoBehaviour
 {
 	private Dictionary<int, GameObject> bottomBlockMap;
 	private Dictionary<int, GameObject> topBlockMap;
 	private Dictionary<string, GameObject> menuMap;
+	// monsterMap contains GameObject reference of monster_container,
+	// use GetComponentInChildren to access monster
 	private Dictionary<int, GameObject> monsterMap;
 	private List<Player> playerList;
 	private List<Monster> monsterList;
@@ -27,6 +30,16 @@ public class GameManagerHandle : MonoBehaviour
 	private PopupType popupType = PopupType.none;
 	// Such ugly implemetation is just for test!!
 	private DialogPopup dialogPopup = new DialogPopup();
+
+	private int tmpLoop = 0;
+	public void tmpTriggerAnimation()
+	{
+		GameObject container = GameObject.Find("monster_container");
+		string[] directions = { "moveToLeft", "moveToUp", "moveToRight", "moveToDown" };
+		container.GetComponent<Animator>().SetTrigger(directions[tmpLoop]);
+		tmpLoop = (tmpLoop + 1) % 4;
+	}
+
 
 	#region block_related
 	private void addBlock(Tuple<int, int> index, Dictionary<int, GameObject> map, GameObject prefab)
@@ -80,6 +93,21 @@ public class GameManagerHandle : MonoBehaviour
 			Debug.LogError("No monster focused on!");
 			return;
 		}
+		if (name == "attack")
+		{
+			if (playerList[currentPlayerId].resourceMap['A'] == 0)
+			{
+				dialogPopup.setContent("攻击资源不足");
+				popupType = PopupType.dialog;
+			}
+			else
+			{
+				Tuple<int, int> index = Tool.getBlockIndex(focusedMonsterPos.Value);
+				Engine.ap.startProces(index);
+			}
+			// GameObject monster = monsterMap[Tool.tupleToInt(index)];
+			// monster.GetComponent<Animator>().SetTrigger("moveToLeft");
+		}
 		if (name == "move")
 		{
 			if (playerList[currentPlayerId].resourceMap['P'] == 0)
@@ -92,13 +120,22 @@ public class GameManagerHandle : MonoBehaviour
 				Tuple<int, int> index = Tool.getBlockIndex(focusedMonsterPos.Value);
 				Engine.mp.startProcess(index, playerList[currentPlayerId].resourceMap['P']);
 				List<Tuple<int, int>> blockList = Engine.mp.getMoveRegion();
-				foreach (Tuple<int, int> block in blockList)
+				if (blockList.Count == 0)
 				{
-					GameObject topBlock = getTopBlock(block);
-					Color c = topBlock.GetComponent<SpriteRenderer>().color;
-					c.a = 0.5f;
-					topBlock.GetComponent<SpriteRenderer>().color = c;
-					topBlock.GetComponent<TopBlockHandle>().isEnabled = true;
+					dialogPopup.setContent("无法移动");
+					popupType = PopupType.dialog;
+					Engine.mp.endProcess();
+				}
+				else
+				{
+					foreach (Tuple<int, int> block in blockList)
+					{
+						GameObject topBlock = getTopBlock(block);
+						Color c = topBlock.GetComponent<SpriteRenderer>().color;
+						c.a = 0.5f;
+						topBlock.GetComponent<SpriteRenderer>().color = c;
+						topBlock.GetComponent<TopBlockHandle>().isEnabled = true;
+					}
 				}
 			}
 		}
@@ -141,16 +178,43 @@ public class GameManagerHandle : MonoBehaviour
 			return;
 		}
 		GameObject monsterObj = Instantiate(monsterPrefab, Tool.getPosition(index), Quaternion.identity) as GameObject;
-		monsterObj.GetComponent<SpriteRenderer>().sortingOrder = 3;
+		monsterObj.GetComponentInChildren<SpriteRenderer>().sortingOrder = 3;
 		MonsterData md = monsterDataList[Engine.sp.getMonster()];
 		Sprite s = Resources.Load<Sprite>(md.getNormalizedResourceId() + "_small");
-		monsterObj.GetComponent<SpriteRenderer>().sprite = s;
+		// for player 0, x = -1, for player 1 x = 1
+		monsterObj.transform.localScale = new Vector3(currentPlayerId * 2 - 1, 1, 1);
+		monsterObj.GetComponentInChildren<SpriteRenderer>().sprite = s;
 		Monster monster = new Monster(md, currentPlayerId);
 		monsterList.Add(monster);
 		playerList[currentPlayerId].monsterList.Add(monsterList.Count - 1);
+		Tool.setMonsterId(monsterObj, monsterList.Count - 1);
+		// monsterObj.GetComponentInChildren<MenuHandle>().monsterId = monsterList.Count - 1;
+		Debug.Log(Tool.getMonsterId(monsterObj));
+		// Debug.Log(monsterObj.GetComponentInChildren<MenuHandle>().monsterId);
 		monsterMap.Add(Tool.tupleToInt(index), monsterObj);
-		Engine.bf.setBlockType(index, BlockType.monster);
+		if (currentPlayerId == 0)
+			Engine.bf.setBlockType(index, BlockType.monster_0);
+		else
+			Engine.bf.setBlockType(index, BlockType.monster_1);
 		updateResourceInfo();
+	}
+
+	public void removeMonster(Tuple<int, int> index)
+	{
+		if (!monsterMap.ContainsKey(Tool.tupleToInt(index)))
+		{
+			Debug.LogError("Block not contains monster");
+			return;
+		}
+		int key = Tool.tupleToInt(index);
+		int monsterId = Tool.getMonsterId(monsterMap[key]);
+		Monster monster = monsterList[monsterId];
+		Engine.bf.setBlockType(index, BlockType.normal);
+		playerList[monster.ownerId].monsterList.Remove(monsterId);
+		// Can not remove, only set to null
+		monsterList[monsterId] = null;
+		Destroy(monsterMap[key]);
+		monsterMap.Remove(key);
 	}
 
 	public GameObject getMonster(Tuple<int, int> index)
@@ -177,10 +241,11 @@ public class GameManagerHandle : MonoBehaviour
 		GameObject monster = getMonster(index);
 		monster.transform.position = destination;
 		monsterMap.Remove(Tool.tupleToInt(index));
+		BlockType bt = Engine.bf.getBlockType(index);
 		Engine.bf.setBlockType(index, BlockType.normal);
 		Tuple<int, int> desIndex = Tool.getBlockIndex(destination);
 		monsterMap.Add(Tool.tupleToInt(desIndex), monster);
-		Engine.bf.setBlockType(desIndex, BlockType.monster);
+		Engine.bf.setBlockType(desIndex, bt);
 		focusedMonsterPos = null;
 		foreach (Tuple<int, int> block in Engine.mp.getMoveRegion())
 		{
@@ -193,6 +258,51 @@ public class GameManagerHandle : MonoBehaviour
 		consumeResource('P', Engine.mp.getDistance(desIndex));
 		updateResourceInfo();
 		Engine.mp.endProcess();
+	}
+
+	private void calcDamage(Monster attacker, Monster attackee)
+	{
+		float damage = attacker.realAttack - attackee.realDefense;
+		if (damage < 0)
+			damage = 0;
+		attackee.realHp -= damage;
+	}
+
+	public void attackMonster(bool isCheckPassed)
+	{
+		if (isCheckPassed)
+		{
+			GameObject attackerMonsterObj = monsterMap[Tool.tupleToInt(Engine.ap.getAttackerPosition())];
+			attackerMonsterObj.GetComponent<Animator>().SetTrigger(Engine.ap.getAttackAnimateTrigger());
+			GameObject attackeeMonsterObj = monsterMap[Tool.tupleToInt(Engine.ap.getAttackeePosition())];
+			Monster attackerMonster = monsterList[Tool.getMonsterId(attackerMonsterObj)];
+			Monster attackeeMonster = monsterList[Tool.getMonsterId(attackeeMonsterObj)];
+			calcDamage(attackerMonster, attackeeMonster);
+			// Counter attack
+			if (attackeeMonster.realHp > 0)
+			{
+				calcDamage(attackeeMonster, attackerMonster);
+				if (attackerMonster.realHp <= 0)
+					removeMonster(Engine.ap.getAttackerPosition());
+			}
+			else
+				removeMonster(Engine.ap.getAttackeePosition());
+			Engine.ap.endProcess();
+		}
+		else
+		{
+			Engine.ap.endProcess();
+			dialogPopup.setContent("无效攻击对象");
+			popupType = PopupType.dialog;
+		}
+	}
+
+	public bool monsterOwnedByCurrentPlayer(int monsterId)
+	{
+		if (monsterList[monsterId].ownerId == currentPlayerId)
+			return true;
+		else
+			return false;
 	}
 	#endregion
 
@@ -336,16 +446,35 @@ public class GameManagerHandle : MonoBehaviour
 		// Engine.sp.startProcess();
 	}
 
-	public void showMonsterInfo(int id)
+	public void endTurn()
 	{
-		MonsterData md = monsterDataList[standbyMonsterIds[id]];
-		string resourceId = md.getNormalizedResourceId();
+		currentPlayerId = 1 - currentPlayerId;
+		updateResourceInfo();
+	}
+
+	private void showMonsterInfo(string resourceId, string name, int level, string property, float attack, float hp)
+	{
 		GameObject displayMonster = GameObject.Find("display_mons");
 		Sprite s = Resources.Load<Sprite>(resourceId + "_large");
 		displayMonster.GetComponent<Image>().sprite = s;
-		string info = string.Format("{0}\n等级 {1}\n属性 {2}\n攻击 {3}\n生命 {4}", md.name, md.level, md.property, md.attack, md.hp);
+		string info = string.Format("{0}\n等级 {1}\n属性 {2}\n攻击 {3}\n生命 {4}", name, level, property, attack, hp);
 		GameObject displayInfo = GameObject.Find("display_info");
 		displayInfo.GetComponent<Text>().text = info;
+	}
+
+	public void showStandbyMonsterInfo(int id)
+	{
+		MonsterData md = monsterDataList[standbyMonsterIds[id]];
+		string resourceId = md.getNormalizedResourceId();
+		showMonsterInfo(resourceId, md.name, md.level, md.property, md.attack, md.hp);
+	}
+
+	public void showActiveMonsterInfo(int monsterId)
+	{
+		Monster monster = monsterList[monsterId];
+		MonsterData md = monsterDataList[monster.monsterDataId];
+		string resourceId = md.getNormalizedResourceId();
+		showMonsterInfo(resourceId, md.name, md.level, md.property, monster.realAttack, monster.realHp);
 	}
 
 	// Use this for initialization
@@ -417,12 +546,63 @@ public class GameManagerHandle : MonoBehaviour
 			standbyMonster.GetComponent<Image>().sprite = s;
 			diceDistribution.GetComponent<Text>().text = monsterDataList[id].getDiceDistributionString();
 		}
-		showMonsterInfo(0);
+		showStandbyMonsterInfo(0);
 
 		playerList.Add(new Player(0));
+		playerList.Add(new Player(1));
+
+		// Only for test
+		playerList[0].resourceMap['S'] = 10;
+		playerList[1].resourceMap['S'] = 10;
 
 		mask = GameObject.Find("mask");
 		mask.SetActive(false);
+
+		Comparison c1 = new Comparison();
+		c1.op = "eq";
+		Property p11 = new Property();
+		p11.propertyName = "name";
+		c1.leftValue = p11;
+		Constant p12 = new Constant();
+		p12.constantValue = "mizumaru";
+		c1.rightValue = p12;
+		Comparison c2 = new Comparison();
+		c2.op = "le";
+		Property p21 = new Property();
+		p21.propertyName = "hp";
+		c2.leftValue = p21;
+		Constant p22 = new Constant();
+		p22.constantValue = "3";
+		c2.rightValue = p22;
+		Logic l1 = new Logic();
+		l1.op = "and";
+		l1.logicElements = new Expression[] { c1, c2 };
+		Filter f1 = new Filter();
+		f1.id = 1;
+		f1.expression = l1;
+
+		Comparison c0 = new Comparison();
+		c0.op = "ge";
+		Aggregate p01 = new Aggregate();
+		p01.filterId = 1;
+		p01.propertyName = "name";
+		p01.aggregateMethod = "Count";
+		c0.leftValue = p01;
+		Constant p02 = new Constant();
+		p02.constantValue = "1";
+		c0.rightValue = p02;
+
+		Condition c = new Condition();
+		c.target = "Monster";
+		c.filters = new Filter[] { f1 };
+		c.criteria = new Expression[] { c0 };
+
+		string dump = JsonConvert.SerializeObject(c);
+		Debug.Log(dump);
+
+		string json = "{'target':'Monster','filters':[{'id':1,'expression':{'logicElements':[{'leftValue':{'propertyName':'name'},'rightValue':{'constantValue':'mizumaru'},'op':'eq'},{'leftValue':{'propertyName':'hp'},'rightValue':{'constantValue':'3'},'op':'le'}],'op':'and'}}],'criteria':[{'leftValue':{'filterId':1,'aggregateMethod':'Count','propertyName':'name'},'rightValue':{'constantValue':'1'},'op':'ge'}]}";
+		Condition cc = JsonConvert.DeserializeObject<Condition>(json, new JsonExpressionConverter(), new JsonValueConverter());
+		Debug.Log(cc.debugPrint());
 	}
 
 	// Update is called once per frame

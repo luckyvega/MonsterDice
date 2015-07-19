@@ -46,6 +46,16 @@ public class Tool
 		return handle;
 	}
 
+	public static int getMonsterId(GameObject monsterObj)
+	{
+		return monsterObj.GetComponentInChildren<MenuHandle>().monsterId;
+	}
+
+	public static void setMonsterId(GameObject monsterObj, int id)
+	{
+		monsterObj.GetComponentInChildren<MenuHandle>().monsterId = id;
+	}
+
 	public static List<int> getRandomList(int min, int max, int count)
 	{
 		List<int> randomList = new List<int>();
